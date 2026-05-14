@@ -1149,7 +1149,7 @@ function renderSettingsModal() {
                 el('button', { class: 'accept-btn', onclick: () => {
                     const nk = apiKeyInput.value.trim();
                     localStorage.setItem('gemini_api_key', nk);
-                    if (window.AgentManager) AgentManager.apiKey = nk;
+                    AgentManager.apiKey = nk;
                     appState.isSettingsModalOpen = false;
                     updateUI();
                 }}, 'Save Settings')

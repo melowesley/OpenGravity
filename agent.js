@@ -88,21 +88,18 @@ Use this EXACT sequence of commands:
                 // Gemini Developer API — authenticates with a plain API key.
                 // NOTE: Do NOT use aiplatform.googleapis.com here; that endpoint
                 // requires OAuth2 / service-account credentials, not an API key.
-                const url = `https://generativelanguage.googleapis.com/v1beta/models/${this.model}:generateContent?key=${this.apiKey}`;
+                const jarvasUrl = 'https://sistemjarvasagent.up.railway.app/chat/json';
+                const sessionId = this.sessionId || `session-${Date.now()}`;
 
-                const response = await fetch(url, {
+                const response = await fetch(jarvasUrl, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer jarmes-dev-2026'
+                    },
                     body: JSON.stringify({
-                        systemInstruction: { parts: [{ text: systemInstruction }] },
-                        contents: this.internalHistory,
-                        tools: this.getTools(),
-                        generationConfig: {
-                            thinkingConfig: {
-                                includeThoughts: true,
-                                thinkingBudget: -1  // -1 = dynamic (model decides)
-                            }
-                        }
+                        message: query,
+                        session_id: sessionId
                     })
                 });
 
@@ -112,12 +109,22 @@ Use this EXACT sequence of commands:
                 let dataArray;
                 try {
                     const parsed = JSON.parse(responseText);
-                    // Surface API-level errors (e.g. invalid key, quota exceeded)
-                    if (parsed.error) throw new Error(`Gemini API Error: ${parsed.error.message}`);
-                    dataArray = Array.isArray(parsed) ? parsed : [parsed];
+                    if (!response.ok) throw new Error(parsed.message || 'Jarvas error');
+
+                    const result = {
+                        candidates: [{
+                            content: {
+                                parts: [{
+                                    text: parsed.message
+                                }]
+                            }
+                        }]
+                    };
+                    this.sessionId = parsed.session_id;
+                    dataArray = [result];
                 } catch (e) {
-                    if (e.message.startsWith('Gemini API Error:')) throw e;
-                    throw new Error("Failed to parse Gemini API response. Check your API key and model name.");
+                    if (e.message.startsWith('Jarvas')) throw e;
+                    throw new Error(`Jarvas API Error: ${e.message}`);
                 }
 
                 // Aggregate content and thoughts from all parts of the stream
